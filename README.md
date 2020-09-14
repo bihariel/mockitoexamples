@@ -45,7 +45,7 @@ And... beyond mocking:
 * In case of checking expected exceptions, please ensure you're checking also the message/attributes of the Exception, not only the type (to avoid false positives)
 * As a best practice, initialize your test class in a "setup" method
 * Refactor also is welcome in test classes/methods, please avoid duplicate code, follow the [**DRY**](https://dzone.com/articles/software-design-principles-dry-and-kiss) principle.
-* ... and more that you'll notice as soon as you [**jump to the code**](file://src/main/test/java/es/geeksusma/mockitoexamples/UserDAOTest.java)
+* ... and more that you'll notice as soon as you [**jump to the code**](src/test/java/es/geeksusma/mockitoexamples/UserDAOTest.java)
 
 
 
