@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+//Protected class implementing public interface (SOLID principles to the rescue)
 class UserDAO implements Save, Update, Delete, Get {
 
     private final UserRepository userRepository;
@@ -62,7 +63,8 @@ class UserDAO implements Save, Update, Delete, Get {
         }
     }
 
-    private Optional<UserEntity> getUserById(Long id) {
+    //Private methods at the end to leave our API at the beginning.
+    private Optional<UserEntity> getUserById(final Long id) {
         return this.userRepository.findById(id);
     }
 }

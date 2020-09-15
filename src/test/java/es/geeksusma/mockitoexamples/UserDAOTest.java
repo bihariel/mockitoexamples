@@ -33,7 +33,7 @@ class UserDAOTest {
     @Mock
     private Mapper<UserEntity, User> userMapper;
 
-    //As a best practice, initialize at constructor level in a setUp method
+    //As a best practice, initialize at constructor level using a setUp method
     @BeforeEach
     void setUp() {
         userDAO = new UserDAO(userRepository, userMapper);
@@ -41,18 +41,16 @@ class UserDAOTest {
 
     /**
      * Check this test to see how to make your mock return a value defined as part of your test.
-     * In this case, we're going to mock our repository, in order to add to it the behaviour of an existing id (it must return an entity)
+     * In this case, we're going to mock our repository, in order to define the entity to return given an existing id
      * And in addition, we're going to mock our mapper, to ensure a value object is returned rather than just the entity
      */
     @Test
     void should_returnUser_when_exists() {
         //given
         final Long existingId = 123213L;
+        //as a best practice, try to extract your setup to private and reusable methods
         final UserEntity expectedEntity = setUpBarbara(existingId);
-        final User barbaraLiskov = User.UserBuilder.anUser()
-                .name(expectedEntity.getName())
-                .lastName(expectedEntity.getLastName())
-                .build();
+        final User barbaraLiskov = setUpUserFromEntity(expectedEntity);
 
         given(userRepository.findById(existingId)).willReturn(Optional.of(expectedEntity));
         given(userMapper.toTarget(expectedEntity)).willReturn(
@@ -76,15 +74,17 @@ class UserDAOTest {
         final Long nonExistingId = 1231332423423L;
 
         //when
+        //check this fancy way of capturing a thrown exception using AssertJ ;)
         Throwable raisedException = catchThrowable(() -> userDAO.byId(nonExistingId));
 
         //then
+        //In this case, we know that exception is only thrown one time from our DAO, and because we don't expect any message (the exception is self-describing) we can live only checking its type.
         assertThat(raisedException).isInstanceOf(UserNotFoundException.class);
         then(userMapper).shouldHaveNoInteractions();
     }
 
     /**
-     * Check this example to see how to make your mock return a collection, and later how to do a basic assertion over the result using AssertJ
+     * Check this example to see how to make your mock returning a collection, and later how to do a basic assertion over the result, using again AssertJ
      */
     @Test
     void should_returnOnlyBarbara_when_getAll() {
@@ -92,7 +92,7 @@ class UserDAOTest {
         final UserEntity barbara = setUpBarbara(132L);
 
         given(userRepository.findAll()).willReturn(Collections.singletonList(barbara));
-        given(userMapper.toTarget(barbara)).willReturn(User.UserBuilder.anUser().name(barbara.getName()).lastName(barbara.getLastName()).build());
+        given(userMapper.toTarget(barbara)).willReturn(setUpUserFromEntity(barbara));
 
         //when
         final List<User> users = userDAO.getAll();
@@ -121,7 +121,7 @@ class UserDAOTest {
 
     /**
      * Check in this example, how to ensure your mock was called with an expected object, even if the object is created inside of the method to test.
-     * Check how captor works.
+     * Check how captor works, I admit sometimes is not trivial.
      * I admit a persist method which is not returning anything (at least the given Id) is not the best one, but this is only to show how to "capturing" values in a mock
      */
     @Test
@@ -134,12 +134,9 @@ class UserDAOTest {
 
         //then
         then(userRepository).should().save(userCaptor.capture());
-        assertThat(userCaptor.getValue()).isEqualToComparingFieldByField(UserEntity.UserEntityBuilder.anUserEntity()
-                .name("Guybrush")
-                .lastName("Threepwood")
-                .enabled(true)
-                .build());
+        assertThat(userCaptor.getValue()).isEqualToComparingFieldByField(setUpGuybrush());
     }
+
 
     /**
      * Check this example to let you know how to add to your mock the behavior of throwing an exception
@@ -171,7 +168,7 @@ class UserDAOTest {
 
         given(userRepository.findById(existingId)).willReturn(Optional.of(setUpBarbara(existingId)));
 
-        doThrow(new PersistenceException("The database was corrupted")).when(userRepository).updateStatus(existingId, true);
+        doThrow(new PersistenceException("The database is corrupted")).when(userRepository).updateStatus(existingId, true);
 
         //when
         Throwable raisedException = catchThrowable(() -> userDAO.setStatus(existingId, true));
@@ -180,6 +177,7 @@ class UserDAOTest {
         assertThat(raisedException).isInstanceOf(UserDataException.class).hasMessage("The user could not be updated");
     }
 
+    //Please, helper methods always at the end of your class to don't pollute tests, and to improve the readability
     private UserEntity setUpBarbara(Long existingId) {
         return new UserEntity(existingId, "Barbara", "Liskov", true);
     }
@@ -192,5 +190,19 @@ class UserDAOTest {
                 .build();
     }
 
+    private User setUpUserFromEntity(UserEntity expectedEntity) {
+        return User.UserBuilder.anUser()
+                .name(expectedEntity.getName())
+                .lastName(expectedEntity.getLastName())
+                .build();
+    }
+
+    private UserEntity setUpGuybrush() {
+        return UserEntity.UserEntityBuilder.anUserEntity()
+                .name("Guybrush")
+                .lastName("Threepwood")
+                .enabled(true)
+                .build();
+    }
 
 }
